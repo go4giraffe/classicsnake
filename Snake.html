@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic 🐍 Snake</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #ad-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            background: #222;
+            border: 4px solid #0f0;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            background: #333;
+        }
+
+        #score {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #start-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #start-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+  <div class="ad-container">
+    <!-- Paste your Google AdSense code here -->
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-1234567890123456"
+         data-ad-slot="9876543210"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+  <h1>Classic 🐍 Snake</h1>
+  <h8>a game by Gregory Harrington</h8>
+  <p></p>
+    <div id="highScoreDisplay">High Score: 0</div>
+    <div id="score">Score: 0</div>
+    <div id="game-container">
+    <canvas id="game" width="400" height="400"></canvas>
+    </div>
+    <button id="start-button">Start Game</button>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const startButton = document.getElementById('start-button');
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{ x: 10, y: 10 }];
+        let direction = { x: 0, y: 0 };
+        let apple = { x: 5, y: 5 };
+        let score = 0;
+        let gameInterval;
+        let gameRunning = false;
+        let highScore = 0;
+
+        // Initialize high score from localStorage
+        if (localStorage.getItem('highScore') !== null) {
+            highScore = parseInt(localStorage.getItem('highScore'));
+        } else {
+            highScore = 0;
+        }
+
+        // Display high score
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw snake
+            ctx.fillStyle = '#0f0';
+            for (let segment of snake) {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+            }
+
+            // Draw apple
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize - 1, gridSize - 1);
+        }
+
+        function gameLoop() {
+            // Move snake
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            // Check collision with walls or body (excluding the head)
+            if (
+                head.x < 0 || head.x >= tileCount ||
+                head.y < 0 || head.y >= tileCount ||
+                snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+            ) {
+                endGame();
+                return;
+            }
+
+            snake.unshift(head);
+
+            // Check if snake ate apple
+            if (head.x === apple.x && head.y === apple.y) {
+                score++;
+                scoreDisplay.textContent = `Score: ${score}`;
+                placeApple();
+            } else {
+                snake.pop();
+            }
+
+            draw();
+        }
+
+        function placeApple() {
+            apple.x = Math.floor(Math.random() * tileCount);
+            apple.y = Math.floor(Math.random() * tileCount);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            startButton.disabled = false;
+            alert('Game Over! Your score: ' + score);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreDisplay.textContent = `High Score: ${highScore}`;
+            }
+
+        }
+
+        function startGame() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 0, y: 0 };
+            score = 0;
+            scoreDisplay.textContent = `Score: ${score}`;
+            placeApple();
+            gameRunning = true;
+            startButton.disabled = true;
+            gameInterval = setInterval(gameLoop, 100);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W':
+                    if (direction.y === 0) direction = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown': case 's': case 'S':
+                    if (direction.y === 0) direction = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft': case 'a': case 'A':
+                    if (direction.x === 0) direction = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight': case 'd': case 'D':
+                    if (direction.x === 0) direction = { x: 1, y: 0 };
+                    break;
+            }
+        });
+
+        // Start button
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
